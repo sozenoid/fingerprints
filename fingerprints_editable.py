@@ -256,16 +256,15 @@ def get_fingerprint_for_SUM(SUMfile):
                 #### Parses the line
                 parts = line.split()
                 # print zip(range(len(parts)),  parts)
-                smiles = parts[0]
-                pubchem_number = parts[1]
-                radius_E = parts[4]
-                radius_BEST = parts[8]
-                E_BIND = min(parts[10], parts[11])
+                smiles = parts[1]
+                pubchem_number = parts[0]
+                radius_E = "na"#parts[4]
+                radius_BEST = "na"#parts[8]
+                E_BIND = parts[2]
                 #### Computes fingerprints
                 fingerprints = get_fingerprint(SMILES=smiles, RADIUS=(radius_BEST, radius_E), E_BIND=E_BIND)
                 #### Writes to file
-                if i % 1000 == 0: print
-                i, zip(get_fingerprint(), fingerprints, range(len(fingerprints)))
+                if i % 1000 == 0: print i, zip(get_fingerprint(), fingerprints, range(len(fingerprints)))
                 w.write(pubchem_number + ',' + smiles + ',' + ','.join(
                     ['{0:4.4f}'.format(float(x)) for x in fingerprints]) + '\n')
                 #### Saves an image
@@ -279,8 +278,9 @@ if __name__ == "__main__":
     # get_fingerprint('c1ccccc1C(=O)O')
     # get_fingerprint('CN1C=NC2=C1C(=O)N(C(=O)N2C)C')
     # get_fingerprints_for_SDF('/home/macenrola/Thesis/GENERATE_FINGERPRINTS/xzamc-min_20_only_mmff94_OUT.sdf_GUESTS.sdf')
-    get_fingerprint_for_SUM(
-        '/home/macenrola/Thesis/PHARMACY_BAD_TASTING/bad_taste_medecine_no_salts/bad_taste_medecine_no_salts.can_SUM')
+    # get_fingerprint_for_SUM(
+        # '/home/macenrola/Thesis/PHARMACY_BAD_TASTING/bad_taste_medecine_no_salts/bad_taste_medecine_no_salts.can_SUM')
 # for els in get_fingerprint():
 # 	print els
 # get_fingerprint('C1=C[NH+]=CN1')
+get_fingerprint_for_SUM("/home/macenrola/Documents/docked_for_data_analysis/fingerprints/500k_docked_pubsmienergy_restart")
