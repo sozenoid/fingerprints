@@ -4,10 +4,10 @@ from rdkit.Chem import rdMolDescriptors as descriptors
 from rdkit.Chem import AllChem, Draw
 import math
 import numpy as np
-from SmallestEnclosingCircle_CASTING import returnCircleAsTuple
+# from SmallestEnclosingCircle_CASTING import returnCircleAsTuple
 
 
-def get_fingerprint(SMILES=None, RADIUS=(None, None), E_BIND=None):
+def get_fingerprint(SMILES=None, E_BIND=None):
     """
     PRE: Takes in a MOLECULE as a SMILES
     POST: Prints its finger prints as two list, the first contains the names, the second contains the fingerprints
@@ -67,8 +67,8 @@ def get_fingerprint(SMILES=None, RADIUS=(None, None), E_BIND=None):
                          'I': 32.52, 'P': 24.43, 'S': 24.43, 'As': 26.52, 'B': 40.48, 'Si': 38.79, 'Se': 28.73,
                          'Te': 36.62}
         gross_volume = 0
-        for sym in atom_types:
-            gross_volume += atom_types[sym] * index_of_vols[sym]
+        # for sym in atom_types:
+            # gross_volume += atom_types[sym] * index_of_vols[sym]
         bonds = mol.GetNumBonds()
         rings = Chem.GetSymmSSSR(mol)
         # print 'aromatic ring count is ',descriptors.CalcNumAromaticRings(mol)
@@ -86,8 +86,10 @@ def get_fingerprint(SMILES=None, RADIUS=(None, None), E_BIND=None):
                 rna += 1
                 if largest_rna < len(rings[ringId]):
                     largest_rna = len(rings[ringId])
-        volume = gross_volume - 5.92 * bonds - 14.7 * ra - 3.8 * rna
-
+        # volume = gross_volume - 5.92 * bonds - 14.7 * ra - 3.8 * rna
+        AllChem.EmbedMolecule(mol)
+        AllChem.MMFFOptimizeMolecule(mol)
+        volume = AllChem.ComputeMolVolume(mol)
         return volume, ra, rna, largest_ra, largest_rna
 
     def isRingAromatic(mol, ring):
@@ -124,8 +126,8 @@ def get_fingerprint(SMILES=None, RADIUS=(None, None), E_BIND=None):
         'MaxNbrFusedRings',
         'SurfaceArea',
         'Charge',
-        'MinRadiusOfCylinder',
-        'RadiusOfCylinderBestConf',
+        # 'MinRadiusOfCylinder',
+        # 'RadiusOfCylinderBestConf',
         'NitroNbr',
         'AlcoholNbr',
         'KetoneNbr',
@@ -215,8 +217,8 @@ def get_fingerprint(SMILES=None, RADIUS=(None, None), E_BIND=None):
 
     names, coords = get_atoms_coords(Chem.MolToMolBlock(mol))
     # feature_dic['MinRadiusOfCylinder'] = returnCircleAsTuple(coords[:,1:])[2]
-    feature_dic['MinRadiusOfCylinder'] = RADIUS[0]
-    feature_dic['RadiusOfCylinderBestConf'] = RADIUS[1]
+    # feature_dic['MinRadiusOfCylinder'] = RADIUS[0]
+    # feature_dic['RadiusOfCylinderBestConf'] = RADIUS[1]
     feature_dic['EBind'] = E_BIND
 
     values = []
@@ -258,20 +260,22 @@ def get_fingerprint_for_SUM(SUMfile):
                 # print zip(range(len(parts)),  parts)
                 smiles = parts[1]
                 pubchem_number = parts[0]
-                radius_E = "na"#parts[4]
-                radius_BEST = "na"#parts[8]
+                # radius_E = "na"#parts[4]
+                # radius_BEST = "na"#parts[8]
                 E_BIND = parts[2]
                 #### Computes fingerprints
-                fingerprints = get_fingerprint(SMILES=smiles, RADIUS=(radius_BEST, radius_E), E_BIND=E_BIND)
+                fingerprints = get_fingerprint(SMILES=smiles, E_BIND=E_BIND)
                 #### Writes to file
-                if i % 1000 == 0: print i, zip(get_fingerprint(), fingerprints, range(len(fingerprints)))
-                w.write(pubchem_number + ',' + smiles + ',' + ','.join(
-                    ['{0:4.4f}'.format(float(x)) for x in fingerprints]) + '\n')
+                if i % 100 == 0: print i, zip(get_fingerprint(), fingerprints, range(len(fingerprints)))
+                try:
+                    w.write(pubchem_number + ',' + smiles + ',' + ','.join(
+                        ['{0:4.4f}'.format(float(x)) for x in fingerprints]) + '\n')
+                except: print line
                 #### Saves an image
-                mol = Chem.MolFromSmiles(smiles)
-                mol = Chem.AddHs(mol)
-                AllChem.Compute2DCoords(mol)
-                Chem.Draw.MolToFile(mol, SUMfile + '_{}.png'.format(pubchem_number), size=(400, 400))
+                # mol = Chem.MolFromSmiles(smiles)
+                # mol = Chem.AddHs(mol)
+                # AllChem.Compute2DCoords(mol)
+                # Chem.Draw.MolToFile(mol, SUMfile + '_{}.png'.format(pubchem_number), size=(400, 400))
 
 
 if __name__ == "__main__":
@@ -280,7 +284,7 @@ if __name__ == "__main__":
     # get_fingerprints_for_SDF('/home/macenrola/Thesis/GENERATE_FINGERPRINTS/xzamc-min_20_only_mmff94_OUT.sdf_GUESTS.sdf')
     # get_fingerprint_for_SUM(
         # '/home/macenrola/Thesis/PHARMACY_BAD_TASTING/bad_taste_medecine_no_salts/bad_taste_medecine_no_salts.can_SUM')
-# for els in get_fingerprint():
-# 	print els
-# get_fingerprint('C1=C[NH+]=CN1')
-get_fingerprint_for_SUM("/home/macenrola/Documents/docked_for_data_analysis/fingerprints/500k_docked_pubsmienergy_restart")
+    # for els in get_fingerprint():
+    # 	print els
+    # get_fingerprint('C1=C[NH+]=CN1')
+    get_fingerprint_for_SUM("/home/macenrola/Documents/docked_for_data_analysis/fingerprints/500k_docked_pubsmienergy_restart")
