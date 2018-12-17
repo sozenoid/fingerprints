@@ -87,9 +87,12 @@ def get_fingerprint(SMILES=None, E_BIND=None):
                 if largest_rna < len(rings[ringId]):
                     largest_rna = len(rings[ringId])
         # volume = gross_volume - 5.92 * bonds - 14.7 * ra - 3.8 * rna
-        AllChem.EmbedMolecule(mol)
-        AllChem.MMFFOptimizeMolecule(mol)
-        volume = AllChem.ComputeMolVolume(mol)
+        try:
+            AllChem.EmbedMolecule(mol)
+            AllChem.MMFFOptimizeMolecule(mol)
+            volume = AllChem.ComputeMolVolume(mol)
+        except:
+            raise ValueError("Can't build the molecule")
         return volume, ra, rna, largest_ra, largest_rna
 
     def isRingAromatic(mol, ring):
@@ -256,6 +259,7 @@ def get_fingerprint_for_SUM(SUMfile):
             w.write('PUBCHEM_NUMBER,' + 'SMILES,' + ','.join(get_fingerprint()) + '\n')
             for i, line in enumerate(r):
                 #### Parses the line
+                # if i < 1500: continue
                 parts = line.split()
                 # print zip(range(len(parts)),  parts)
                 smiles = parts[1]
@@ -264,10 +268,11 @@ def get_fingerprint_for_SUM(SUMfile):
                 # radius_BEST = "na"#parts[8]
                 E_BIND = parts[2]
                 #### Computes fingerprints
-                fingerprints = get_fingerprint(SMILES=smiles, E_BIND=E_BIND)
-                #### Writes to file
-                if i % 100 == 0: print i, zip(get_fingerprint(), fingerprints, range(len(fingerprints)))
                 try:
+                    fingerprints = get_fingerprint(SMILES=smiles, E_BIND=E_BIND)
+                    #### Writes to file
+                    if i % 100 == 0: print i, zip(get_fingerprint(), fingerprints, range(len(fingerprints)))
+
                     w.write(pubchem_number + ',' + smiles + ',' + ','.join(
                         ['{0:4.4f}'.format(float(x)) for x in fingerprints]) + '\n')
                 except: print line
