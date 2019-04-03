@@ -145,7 +145,6 @@ def get_fingerprint(SMILES=None, E_BIND=None):
         'AnilineNbr',
         'PrimaryAmineNbr',
         'SecondaryAmineNbr',
-        'EBind',
         'RotableBondNum',
         'HBondDonor',
         'HBondAcceptor',
@@ -218,11 +217,10 @@ def get_fingerprint(SMILES=None, E_BIND=None):
         patt = Chem.MolFromSmarts(funct)
         feature_dic[funct_dic[funct]] = len(mol.GetSubstructMatches(patt))
 
-    names, coords = get_atoms_coords(Chem.MolToMolBlock(mol))
+    # names, coords = get_atoms_coords(Chem.MolToMolBlock(mol))
     # feature_dic['MinRadiusOfCylinder'] = returnCircleAsTuple(coords[:,1:])[2]
     # feature_dic['MinRadiusOfCylinder'] = RADIUS[0]
     # feature_dic['RadiusOfCylinderBestConf'] = RADIUS[1]
-    feature_dic['EBind'] = E_BIND
 
     values = []
     for key in sorted(feature_dic.keys()):
@@ -283,7 +281,58 @@ def get_fingerprint_for_SUM(SUMfile):
                 # Chem.Draw.MolToFile(mol, SUMfile + '_{}.png'.format(pubchem_number), size=(400, 400))
 
 
+def get_fingerprints_for_hydrocarbons(fin='/home/macenrola/Documents/fingerprints-hydrocarbons/sumdic_with_apolar_breakdown-processedfreeenergy-sorted_with_smi_nohighbad.txt_WITH_RADII_with_centroid_diff_pca_atominside'):
+	"""
+	:param fin: takes in the final ranking file that containst the rankings binding energies
+	:return: attach the fingerprints to it
+	"""
+	with open(fin, 'rb') as r:
+		with open(fin + '_FINGERPRINTS', 'wb') as w:
+			w.write(','.join(['Label', 'PB_NUMBER', 'BINDING_AFFINITY', 'BINDING_ENERGY', 'U_VAL', 'U_VDW', 'U_COUL','W_NP', 'W_ELEC', 'CONFIG_ENTROPY',
+					 'SPHERE', 'DISTANCE_CENTROID_FRAG', 'ATOMS_INSIDE']) + ','.join(get_fingerprint()) + '\n')
+			for i, line in enumerate(r):
+				#### Parses the line
+				# if i < 1500: continue
+				parts = line.split()
+				fmol = parts[13]
+				complex = Chem.MolFromPDBFile(fmol, removeHs=False)
+				cb, guest = Chem.GetMolFrags(complex, asMols=True)
+				if cb.GetNumAtoms() < guest.GetNumAtoms():
+					cb, guest = guest, cb
+				smiles = Chem.MolToSmiles(guest)
+				label = parts[10]
+				pb_number = parts[11]
+				dg = parts[2]
+				dh = parts[3]
+				ds = parts[9]
+				uval, uvdw, ucoul, wnp, welec = parts[3:8]
+				sphere = parts[12]
+				distance_frags = parts[14]
+				atoms_inside = parts[15]
+				path = '/home/macenrola/Documents/fingerprints-hydrocarbons/'
+				Chem.MolToPDBFile(complex, path+'{}-complex.pbd'.format(pb_number))
+				Chem.MolToPDBFile(complex, path+'{}-guest.pbd'.format(pb_number))
+				# print zip(range(len(parts)),  parts)
+				# smiles = parts[1]
+				# pubchem_number = parts[0]
+				# radius_E = "na"#parts[4]
+				# radius_BEST = "na"#parts[8]
+				# E_BIND = parts[2]
+				#### Computes fingerprints
+				try:
+					print zip(parts, range(len(parts)))
+
+					# fingerprints = get_fingerprint(SMILES=smiles)
+					# print fingerprints
+					# #### Writes to file
+					# if i % 100 == 0: print i, zip(get_fingerprint(), fingerprints, range(len(fingerprints)))
+					#
+					# w.write(','.join([label, pb_number, dg, dh, uval, uvdw, ucoul, wnp, welec, ds, sphere,distance_frags,atoms_inside])+ ',' + ','.join(
+						# ['{0:4.4f}'.format(float(x)) for x in fingerprints]) + '\n')
+				except:
+					print line
 if __name__ == "__main__":
+	get_fingerprints_for_hydrocarbons()
     # get_fingerprint('c1ccccc1C(=O)O')
     # get_fingerprint('CN1C=NC2=C1C(=O)N(C(=O)N2C)C')
     # get_fingerprints_for_SDF('/home/macenrola/Thesis/GENERATE_FINGERPRINTS/xzamc-min_20_only_mmff94_OUT.sdf_GUESTS.sdf')
@@ -292,4 +341,5 @@ if __name__ == "__main__":
     # for els in get_fingerprint():
     # 	print els
     # get_fingerprint('C1=C[NH+]=CN1')
-    get_fingerprint_for_SUM("/home/macenrola/Documents/docked_for_data_analysis/fingerprints/500k_docked_pubsmienergy_restart")
+    # get_fingerprint_for_SUM("/home/macenrola/Documents/docked_for_data_analysis/fingerprints/500k_docked_pubsmienergy_restart")
+    # print(zip(get_fingerprint(), get_fingerprint('C1=CC=C(C=C1)O', 1000)))
